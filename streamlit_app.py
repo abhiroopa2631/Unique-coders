@@ -1,57 +1,63 @@
 import streamlit as st
 import csv
 
-def candidate_elimination(file_path):
-    a = []
-    with open(file_path, 'r') as csvFile:
-        reader = csv.reader(csvFile)
-        for row in reader:
-            a.append(row)
-    
-    num_attributes = len(a[0])-1
+st.title("Candidate Elimination Algorithm")
+
+# Function to perform Candidate Elimination algorithm
+def candidate_elimination(data):
+    num_attributes = len(data[0])-1
     S = ['0'] * num_attributes
     G = ['?'] * num_attributes
-    output = []
-
+    version_space = []
+    
+    st.subheader("Initial Hypotheses:")
+    st.write("Most Specific Hypothesis (S0): ", S)
+    st.write("Most General Hypothesis (G0): ", G)
+    
     for j in range(0,num_attributes):
-        S[j] = a[0][j]
-
-    for i in range(0,len(a)):
-        if a[i][num_attributes] == 'Yes':
-            for j in range(0,num_attributes):
-                if a[i][j] != S[j]:
+        S[j] = data[0][j]
+    
+    for i in range(0, len(data)):
+        if data[i][num_attributes] == 'Yes':
+            for j in range(0, num_attributes):
+                if data[i][j] != S[j]:
                     S[j] = '?'
-            for j in range(0,num_attributes):
-                for k in range(1,len(output)):
-                    if output[k][j] != '?' and output[k][j] != S[j]:
-                        del output[k]
-
-            output.append(S[:])
-            
-        if a[i][num_attributes] == 'No':
-            for j in range(0,num_attributes):
-                if S[j] != a[i][j] and S[j] != '?':
+            for j in range(0, num_attributes):
+                for k in range(1, len(version_space)):
+                    if version_space[k][j] != '?' and version_space[k][j] != S[j]:
+                        del version_space[k]
+            st.write("----------------------------------------------------------------------------- ")
+            st.write("For Training Example No :", i+1, "the hypothesis is S" + str(i+1), S)
+            if len(version_space) == 0:
+                st.write("For Training Example No :", i+1, "the hypothesis is G" + str(i+1), G)
+            else:
+                st.write("For Positive Training Example No :", i+1, "the hypothesis is G" + str(i+1), version_space)
+                
+        if data[i][num_attributes] == 'No':
+            for j in range(0, num_attributes):
+                if S[j] != data[i][j] and S[j] != '?':
                     G[j] = S[j]
-                    output.append(G[:])
+                    version_space.append(G)
                     G = ['?'] * num_attributes
-    
-    return output
+            st.write("----------------------------------------------------------------------------- ")
+            st.write("For Training Example No :", i+1, "the hypothesis is S" + str(i+1), S)
+            st.write("For Training Example No :", i+1, "the hypothesis is G" + str(i+1), version_space)
 
-def main():
-    st.title("Candidate Elimination Algorithm")
-    
-    uploaded_file = st.file_uploader("Upload CSV file", type=["csv"])
-    
-    if uploaded_file is not None:
-        file_path = "temp_file.csv"
-        with open(file_path, "wb") as f:
-            f.write(uploaded_file.getbuffer())
-        
-        output = candidate_elimination(file_path)
-        
-        st.write("Version Space:")
-        for i, hypothesis in enumerate(output):
-            st.write(f"Hypothesis {i}: {hypothesis}")
+# User input for uploading CSV file
+uploaded_file = st.file_uploader("Upload CSV file", type=["csv"])
 
-if __name__ == "__main__":
-    main()
+if uploaded_file is not None:
+    # Load data
+    data = []
+    with uploaded_file:
+        reader = csv.reader(uploaded_file)
+        for row in reader:
+            data.append(row)
+    
+    st.subheader("Training Data Set:")
+    for row in data:
+        st.write(row)
+
+    # Run Candidate Elimination algorithm
+    st.subheader("Candidate Elimination Algorithm Hypotheses Version Space Computation:")
+    candidate_elimination(data)
