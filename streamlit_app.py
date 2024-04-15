@@ -1,5 +1,6 @@
 import streamlit as st
 import csv
+import io
 
 st.title("Candidate Elimination Algorithm")
 
@@ -47,13 +48,13 @@ def candidate_elimination(data):
 uploaded_file = st.file_uploader("Upload CSV file", type=["csv"])
 
 if uploaded_file is not None:
+    # Read uploaded file as string
+    file_contents = uploaded_file.getvalue().decode("utf-8")
+    # Convert string to file-like object
+    stringio = io.StringIO(file_contents)
     # Load data
-    data = []
-    with uploaded_file:
-        reader = csv.reader(uploaded_file)
-        for row in reader:
-            data.append(row)
-    
+    data = list(csv.reader(stringio))
+
     st.subheader("Training Data Set:")
     for row in data:
         st.write(row)
