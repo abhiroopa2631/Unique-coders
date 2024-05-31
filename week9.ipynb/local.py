@@ -1,0 +1,58 @@
+import streamlit as st
+import numpy as np
+from scipy import linalg
+
+def lowess(x, y, f, iterations):
+    n = len(x)
+    r = int(np.ceil(f * n))
+    h = [np.sort(np.abs(x - x[i]))[r] for i in range(n)]
+    w = np.clip(np.abs((x[:, None] - x[None, :]) / h), 0.0, 1.0)
+    w = (1 - w ** 3) ** 3
+    yest = np.zeros(n)
+    delta = np.ones(n)
+    for iteration in range(iterations):
+        for i in range(n):
+            weights = delta * w[:, i]
+            b = np.array([np.sum(weights * y), np.sum(weights * y * x)])
+            A = np.array([[np.sum(weights), np.sum(weights * x)],
+                          [np.sum(weights * x), np.sum(weights * x * x)]])
+            beta = linalg.solve(A, b)
+            yest[i] = beta[0] + beta[1] * x[i]
+
+        residuals = y - yest
+        s = np.median(np.abs(residuals))
+        delta = np.clip(residuals / (6.0 * s), -1, 1)
+        delta = (1 - delta ** 2) ** 2
+
+    return yest
+
+def main():
+    st.title("Locally Weighted Scatterplot Smoothing (LOWESS)")
+
+    # Parameters
+    n = 100
+    f = 0.25
+    iterations = 3
+
+    # Generate sample data
+    x = np.linspace(0, 2 * np.pi, n)
+    y = np.sin(x) + 0.3 * np.random.randn(n)
+
+    # Compute LOWESS
+    yest = lowess(x, y, f, iterations)
+
+    # Plot results
+    st.pyplot(plot_results(x, y, yest))
+
+def plot_results(x, y, yest):
+    import matplotlib.pyplot as plt
+    fig, ax = plt.subplots()
+    ax.plot(x, y, 'r.', label='Original data')
+    ax.plot(x, yest, 'b-', label='LOWESS')
+    ax.legend()
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    return fig
+
+if __name__ == "__main__":
+    main()
