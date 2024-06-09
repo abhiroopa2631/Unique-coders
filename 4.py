@@ -95,4 +95,4 @@ input_data = pd.DataFrame({
 # Predict and display result on button click
 if st.button("Predict"):
     prediction = classifier.predict(input_data)
-    st.write(f"Prediction: {'Play Tennis' if prediction[0] == 1 else 'Don't Play Tennis'}")
+    st.write(f"Prediction: {'Play Tennis' if prediction[0] == 1 else 'Don\'t Play Tennis'}")
