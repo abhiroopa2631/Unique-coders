@@ -1,13 +1,17 @@
 import streamlit as st
 import numpy as np
 import csv
+import io
 
+# Function to read data from CSV file
 def read_data(file):
-    datareader = csv.reader(file)
+    content = file.read().decode('utf-8')
+    datareader = csv.reader(io.StringIO(content))
     metadata = next(datareader)
     traindata = [row for row in datareader]
     return (metadata, traindata)
 
+# Function to split dataset into training and testing sets
 def splitDataset(dataset, splitRatio):
     trainSize = int(len(dataset) * splitRatio)
     trainSet = []
@@ -17,6 +21,7 @@ def splitDataset(dataset, splitRatio):
         trainSet.append(testset.pop(i))
     return [trainSet, testset]
 
+# Naive Bayes classifier
 def classify(data, test):
     total_size = data.shape[0]
     st.write("Training data size =", total_size)
@@ -61,7 +66,7 @@ def classify(data, test):
             predict = target[1]
         st.write(f"{t+1}\t{predict}\t{test[t, test.shape[1] - 1]}")
 
-        if predict == test[t, test.shape[1] - 1]:
+        if predict == test[t, test.shape[1] - 1]):
             accuracy += 1
     final_accuracy = (accuracy / test.shape[0]) * 100
     st.write(f"Accuracy: {final_accuracy}%")
@@ -70,6 +75,7 @@ def classify(data, test):
 # Streamlit app
 st.title("Naive Bayes Classifier")
 
+# File uploader
 uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
 
 if uploaded_file is not None:
