@@ -11,6 +11,7 @@ def main():
     uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
 
     if uploaded_file is not None:
+        # Load the dataset
         msg = pd.read_csv(uploaded_file, names=['message', 'label'])
         
         st.write("Total Instances of Dataset: ", msg.shape[0])
@@ -36,7 +37,7 @@ def main():
         y = msg.labelnum
 
         # Split the data into training and test sets
-        Xtrain, Xtest, ytrain, ytest = train_test_split(X, y)
+        Xtrain, Xtest, ytrain, ytest = train_test_split(X, y, test_size=0.2, random_state=42)
 
         # Verify the splits
         st.write("Training labels distribution:\n", ytrain.value_counts())
@@ -61,8 +62,8 @@ def main():
         # Print the predictions for the test set
         st.write("Predictions for the test set:")
         for doc, p in zip(Xtest, pred):
-            p = 'pos' if p == 1 else 'neg'
-            st.write("%s -> %s" % (doc, p))
+            label = 'pos' if p == 1 else 'neg'
+            st.write(f"{doc} -> {label}")
 
         # Verify there are no NaN values in ytest or pred
         st.write("Missing values in ytest: ", pd.isnull(ytest).sum())
