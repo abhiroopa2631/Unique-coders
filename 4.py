@@ -1,57 +1,88 @@
 import streamlit as st
-import pandas as pd
-from sklearn.preprocessing import LabelEncoder
-from sklearn.naive_bayes import GaussianNB
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
+import numpy as np
+import csv
 
-st.title("Tennis Data Classification")
+def read_data(file):
+    datareader = csv.reader(file)
+    metadata = next(datareader)
+    traindata = [row for row in datareader]
+    return (metadata, traindata)
 
-# Step 1: File Upload
-uploaded_file = st.file_uploader("Upload CSV file", type=["csv"])
+def splitDataset(dataset, splitRatio):
+    trainSize = int(len(dataset) * splitRatio)
+    trainSet = []
+    testset = list(dataset)
+    i = 0
+    while len(trainSet) < trainSize:
+        trainSet.append(testset.pop(i))
+    return [trainSet, testset]
+
+def classify(data, test):
+    total_size = data.shape[0]
+    st.write("Training data size =", total_size)
+    st.write("Test data size =", test.shape[0])
+    target = np.unique(data[:, -1])
+    count = np.zeros((target.shape[0]), dtype=np.int32)
+    prob = np.zeros((target.shape[0]), dtype=np.float32)
+
+    st.write("Target, Count, Probability")
+
+    for y in range(target.shape[0]):
+        for x in range(data.shape[0]):
+            if data[x, data.shape[1] - 1] == target[y]:
+                count[y] += 1
+        prob[y] = count[y] / total_size  # Computes the probability of target
+        st.write(f"{target[y]}\t{count[y]}\t{prob[y]}")
+
+    prob0 = np.zeros((test.shape[1] - 1), dtype=np.float32)
+    prob1 = np.zeros((test.shape[1] - 1), dtype=np.float32)
+    accuracy = 0
+    st.write("Instance, Prediction, Target")
+    for t in range(test.shape[0]):
+        for k in range(test.shape[1] - 1):
+            count1 = count0 = 0
+            for j in range(data.shape[0]):
+                if test[t, k] == data[j, k] and data[j, data.shape[1] - 1] == target[0]:
+                    count0 += 1
+                elif test[t, k] == data[j, k] and data[j, data.shape[1] - 1] == target[1]:
+                    count1 += 1
+            prob0[k] = count0 / count[0]
+            prob1[k] = count1 / count[1]
+
+        probno = prob[0]
+        probyes = prob[1]
+        for i in range(test.shape[1] - 1):
+            probno = probno * prob0[i]
+            probyes = probyes * prob1[i]
+
+        if probno > probyes:
+            predict = target[0]
+        else:
+            predict = target[1]
+        st.write(f"{t+1}\t{predict}\t{test[t, test.shape[1] - 1]}")
+
+        if predict == test[t, test.shape[1] - 1]:
+            accuracy += 1
+    final_accuracy = (accuracy / test.shape[0]) * 100
+    st.write(f"Accuracy: {final_accuracy}%")
+    return
+
+# Streamlit app
+st.title("Naive Bayes Classifier")
+
+uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
+
 if uploaded_file is not None:
-    data = pd.read_csv(uploaded_file)
-    st.write("The first 5 rows of the data are:")
-    st.write(data.head())
+    metadata, traindata = read_data(uploaded_file)
+    splitRatio = st.slider("Split Ratio", 0.1, 0.9, 0.6)
+    trainingset, testset = splitDataset(traindata, splitRatio)
+    training = np.array(trainingset)
+    testing = np.array(testset)
 
-    # Step 2: Prepare Data
-    X = data.iloc[:, :-1]
-    y = data.iloc[:, -1]
-    
-    st.write("The first 5 rows of the train data are:")
-    st.write(X.head())
-    
-    st.write("The first 5 rows of the train output are:")
-    st.write(y.head())
+    st.write("------------------Training Data ------------------ ")
+    st.write(trainingset)
+    st.write("-------------------Test Data ------------------ ")
+    st.write(testset)
 
-    # Step 3: Encode Data
-    le_outlook = LabelEncoder()
-    X['Outlook'] = le_outlook.fit_transform(X['Outlook'])
-
-    le_Temperature = LabelEncoder()
-    X['Temperature'] = le_Temperature.fit_transform(X['Temperature'])
-
-    le_Humidity = LabelEncoder()
-    X['Humidity'] = le_Humidity.fit_transform(X['Humidity'])
-
-    le_Windy = LabelEncoder()
-    X['Windy'] = le_Windy.fit_transform(X['Windy'])
-
-    st.write("Now the train data is:")
-    st.write(X.head())
-
-    le_PlayTennis = LabelEncoder()
-    y = le_PlayTennis.fit_transform(y)
-    st.write("Now the train output is:")
-    st.write(y)
-
-    # Step 4: Split Data
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.20, random_state=42)
-
-    # Step 5: Train Model
-    classifier = GaussianNB()
-    classifier.fit(X_train, y_train)
-
-    # Step 6: Evaluate Model
-    accuracy = accuracy_score(classifier.predict(X_test), y_test)
-    st.write(f"Accuracy of the model is: {accuracy:.2f}")
+    if st.button("Classify"):
+        classify(training, testing)
