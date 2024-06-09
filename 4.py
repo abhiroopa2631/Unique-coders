@@ -1,98 +1,58 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
+from sklearn import tree
+from sklearn.preprocessing import LabelEncoder
+from sklearn.naive_bayes import GaussianNB
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
 
-# Display title
-st.title("Tennis Play Predictor")
+st.title("Tennis Data Classification")
 
-# Load data
-@st.cache
-def load_data():
-    data = pd.read_csv('https://raw.githubusercontent.com/your_username/your_repo/master/tennisdata.csv')
-    return data
+# Step 1: File Upload
+uploaded_file = st.file_uploader("Upload CSV file", type=["csv"])
+if uploaded_file is not None:
+    data = pd.read_csv(uploaded_file)
+    st.write("The first 5 rows of the data are:")
+    st.write(data.head())
 
-data = load_data()
-
-# Preprocess data
-data['Outlook'] = data['Outlook'].map({'Sunny': 0, 'Overcast': 1, 'Rainy': 2})
-data['Temperature'] = data['Temperature'].map({'Hot': 0, 'Mild': 1, 'Cool': 2})
-data['Humidity'] = data['Humidity'].map({'High': 0, 'Normal': 1})
-data['Windy'] = data['Windy'].map({False: 0, True: 1})
-data['PlayTennis'] = data['PlayTennis'].map({'No': 0, 'Yes': 1})
-
-# Split data into features and target
-X = data[['Outlook', 'Temperature', 'Humidity', 'Windy']]
-y = data['PlayTennis']
-
-# Train-test split
-def train_test_split(X, y, test_size=0.2):
-    n_samples = X.shape[0]
-    n_test = int(n_samples * test_size)
-    test_indices = np.random.choice(n_samples, n_test, replace=False)
-    train_indices = [i for i in range(n_samples) if i not in test_indices]
-    X_train, X_test = X.iloc[train_indices], X.iloc[test_indices]
-    y_train, y_test = y.iloc[train_indices], y.iloc[test_indices]
-    return X_train, X_test, y_train, y_test
-
-X_train, X_test, y_train, y_test = train_test_split(X, y)
-
-# Naive Bayes classifier
-class NaiveBayesClassifier:
-    def fit(self, X_train, y_train):
-        self.priors = {}
-        self.posteriors = {}
-        self.classes = np.unique(y_train)
-        for c in self.classes:
-            X_c = X_train[y_train == c]
-            self.priors[c] = len(X_c) / len(X_train)
-            self.posteriors[c] = X_c.mean(axis=0)
-            
-    def predict(self, X_test):
-        y_pred = []
-        for i in range(len(X_test)):
-            probs = {c: np.prod(self._calculate_likelihood(X_test.iloc[i], self.posteriors[c])) * self.priors[c] for c in self.classes}
-            y_pred.append(max(probs, key=probs.get))
-        return y_pred
+    # Step 2: Prepare Data
+    X = data.iloc[:, :-1]
+    y = data.iloc[:, -1]
     
-    def _calculate_likelihood(self, x, class_posterior):
-        likelihood = []
-        for i, val in enumerate(x):
-            mu = class_posterior[i]
-            p = (1 / (np.sqrt(2 * np.pi) * mu[1])) * np.exp(-0.5 * ((val - mu[0]) / mu[1]) ** 2)
-            likelihood.append(p)
-        return likelihood
+    st.write("The first 5 rows of the train data are:")
+    st.write(X.head())
+    
+    st.write("The first 5 rows of the train output are:")
+    st.write(y.head())
 
-# Train the model
-classifier = NaiveBayesClassifier()
-classifier.fit(X_train, y_train)
+    # Step 3: Encode Data
+    le_outlook = LabelEncoder()
+    X.Outlook = le_outlook.fit_transform(X.Outlook)
 
-# Model accuracy
-def accuracy_score(y_true, y_pred):
-    return sum(y_true == y_pred) / len(y_true)
+    le_Temperature = LabelEncoder()
+    X.Temperature = le_Temperature.fit_transform(X.Temperature)
 
-y_pred = classifier.predict(X_test)
-accuracy = accuracy_score(y_test, y_pred)
+    le_Humidity = LabelEncoder()
+    X.Humidity = le_Humidity.fit_transform(X.Humidity)
 
-# Display model accuracy
-st.write(f"Model Accuracy: {accuracy*100:.2f}%")
+    le_Windy = LabelEncoder()
+    X.Windy = le_Windy.fit_transform(X.Windy)
 
-# Display input features section
-st.header("Input Features")
+    st.write("Now the train data is:")
+    st.write(X.head())
 
-outlook = st.selectbox("Outlook", ['Sunny', 'Overcast', 'Rainy'])
-temperature = st.selectbox("Temperature", ['Hot', 'Mild', 'Cool'])
-humidity = st.selectbox("Humidity", ['High', 'Normal'])
-windy = st.selectbox("Windy", [False, True])
+    le_PlayTennis = LabelEncoder()
+    y = le_PlayTennis.fit_transform(y)
+    st.write("Now the train output is:")
+    st.write(y)
 
-# Encoding user input
-input_data = pd.DataFrame({
-    'Outlook': [outlook],
-    'Temperature': [temperature],
-    'Humidity': [humidity],
-    'Windy': [windy]
-})
+    # Step 4: Split Data
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.20, random_state=42)
 
-# Predict and display result on button click
-if st.button("Predict"):
-    prediction = classifier.predict(input_data)
-    st.write(f"Prediction: {'Play Tennis' if prediction[0] == 1 else 'Don\'t Play Tennis'}")
+    # Step 5: Train Model
+    classifier = GaussianNB()
+    classifier.fit(X_train, y_train)
+
+    # Step 6: Evaluate Model
+    accuracy = accuracy_score(classifier.predict(X_test), y_test)
+    st.write(f"Accuracy of the model is: {accuracy:.2f}")
