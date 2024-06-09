@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-from sklearn import tree
 from sklearn.preprocessing import LabelEncoder
 from sklearn.naive_bayes import GaussianNB
 from sklearn.model_selection import train_test_split
@@ -27,16 +26,16 @@ if uploaded_file is not None:
 
     # Step 3: Encode Data
     le_outlook = LabelEncoder()
-    X.Outlook = le_outlook.fit_transform(X.Outlook)
+    X['Outlook'] = le_outlook.fit_transform(X['Outlook'])
 
     le_Temperature = LabelEncoder()
-    X.Temperature = le_Temperature.fit_transform(X.Temperature)
+    X['Temperature'] = le_Temperature.fit_transform(X['Temperature'])
 
     le_Humidity = LabelEncoder()
-    X.Humidity = le_Humidity.fit_transform(X.Humidity)
+    X['Humidity'] = le_Humidity.fit_transform(X['Humidity'])
 
     le_Windy = LabelEncoder()
-    X.Windy = le_Windy.fit_transform(X.Windy)
+    X['Windy'] = le_Windy.fit_transform(X['Windy'])
 
     st.write("Now the train data is:")
     st.write(X.head())
