@@ -55,3 +55,6 @@ if st.button('Diagnose'):
     prob_covid = result.values[1]
 
     st.subheader(f"Probability of COVID-19 Infection: {prob_covid * 100:.2f}%")
+
+if __name__ == "__main__":
+    st.run()
